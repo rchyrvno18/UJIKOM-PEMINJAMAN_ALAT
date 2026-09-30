@@ -10,34 +10,41 @@
         <span class="uppercase font-bold text-emerald-900">{{ auth()->user()->role }}</span>.
     </div>
 
-    <!-- Tabel Log Aktivitas -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-        <div class="p-5 border-b border-gray-200 bg-gray-50">
-            <h3 class="text-lg font-bold text-gray-800">Log Aktivitas Terbaru</h3>
+    <!-- Kartu Statistik -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+            <p class="text-sm text-gray-500 mb-1">Total User</p>
+            <p class="text-3xl font-bold text-gray-800">{{ $totalUser }}</p>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-100 text-gray-600 text-sm uppercase tracking-wider">
-                        <th class="py-3 px-4 border-b">Waktu</th>
-                        <th class="py-3 px-4 border-b">User</th>
-                        <th class="py-3 px-4 border-b">Aktivitas</th>
-                    </tr>
-                </thead>
-                <tbody class="text-gray-700 text-sm">
-                    @forelse($logs as $log)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="py-3 px-4 border-b">{{ $log->created_at }}</td>
-                            <td class="py-3 px-4 border-b font-medium text-gray-900">{{ $log->user->name ?? 'Sistem' }}</td>
-                            <td class="py-3 px-4 border-b">{{ $log->aktivitas }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="py-4 text-center text-gray-500">Belum ada log aktivitas.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+            <p class="text-sm text-gray-500 mb-1">Total Alat</p>
+            <p class="text-3xl font-bold text-gray-800">{{ $totalAlat }}</p>
         </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+            <p class="text-sm text-gray-500 mb-1">Total Kategori</p>
+            <p class="text-3xl font-bold text-gray-800">{{ $totalKategori }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+            <p class="text-sm text-gray-500 mb-1">Peminjaman Aktif</p>
+            <p class="text-3xl font-bold text-blue-600">{{ $peminjamanAktif }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+            <p class="text-sm text-gray-500 mb-1">Menunggu Persetujuan</p>
+            <p class="text-3xl font-bold text-amber-600">{{ $peminjamanDiajukan }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+            <p class="text-sm text-gray-500 mb-1">Alat Stok Habis</p>
+            <p class="text-3xl font-bold text-red-600">{{ $alatStokHabis }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 flex items-center justify-between">
+        <div>
+            <h3 class="font-semibold text-gray-800">Log Aktivitas</h3>
+            <p class="text-sm text-gray-500">Riwayat aktivitas sistem sekarang ada di halaman terpisah.</p>
+        </div>
+        <a href="{{ route('admin.log-aktivitas.index') }}" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+            Lihat Log Aktivitas
+        </a>
     </div>
 @endsection

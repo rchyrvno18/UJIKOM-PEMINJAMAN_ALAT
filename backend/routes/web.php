@@ -10,10 +10,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// admin
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    // admin
+    Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
-
+    Route::get('/log-aktivitas', [AdminController::class, 'indexLogAktivitas'])->name('log-aktivitas.index');
     // CRUD User
     Route::get('/users', [AdminController::class, 'indexUser'])->name('user.index');
     Route::get('/users/create', [AdminController::class, 'createUser'])->name('user.create');
@@ -70,9 +70,12 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petu
 
 // peminjam
 Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam.')->group(function () {
-    // Katalog & Pengajuan
-   
- });
+    Route::get('/katalog', [PeminjamanController::class, 'katalogAlat'])->name('katalog');
+    Route::post('/ajukan', [PeminjamanController::class, 'ajukanPeminjaman'])->name('ajukan');
+    Route::get('/riwayat', [PeminjamanController::class, 'riwayatPeminjaman'])->name('riwayat');
+    Route::post('/kembalikan/{id}', [PeminjamanController::class, 'prosesPengembalian'])->name('kembalikan');
+    Route::delete('/batalkan/{id}', [PeminjamanController::class, 'batalkanPeminjaman'])->name('batalkan');
+});
 
 // Route Tamu (Belum Login)
 Route::middleware('guest')->group(function () {

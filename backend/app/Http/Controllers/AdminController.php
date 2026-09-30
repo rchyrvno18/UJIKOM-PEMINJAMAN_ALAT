@@ -18,9 +18,40 @@ class AdminController extends Controller
     // Halaman dashboard admin: ringkasan + log aktivitas terbaru
     public function index()
     {
-        $logs = LogAktivitas::with('user')->latest()->take(20)->get();
+        $totalUser = User::count();
+        $totalAlat = Alat::count();
+        $totalKategori = Kategori::count();
+        $peminjamanAktif = Peminjaman::whereIn('status', ['dipinjam', 'telat'])->count();
+        $peminjamanDiajukan = Peminjaman::where('status', 'diajukan')->count();
+        $alatStokHabis = Alat::where('stok', 0)->count();
 
-        return view('admin.dashboard', compact('logs'));
+        return view('admin.dashboard', compact(
+            'totalUser',
+            'totalAlat',
+            'totalKategori',
+            'peminjamanAktif',
+            'peminjamanDiajukan',
+            'alatStokHabis'
+        ));
+    }
+
+    // Halaman Log Aktivitas (terpisah dari dashboard)
+    public function indexLogAktivitas(Request $request)
+    {
+        $search = $request->input('search');
+
+        $logs = LogAktivitas::with('user')
+            ->when($search, function ($query, $search) {
+                return $query->where('aktivitas', 'like', "%{$search}%")
+                            ->orWhereHas('user', function ($q) use ($search) {
+                                $q->where('name', 'like', "%{$search}%");
+                            });
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.log-aktivitas.index', compact('logs', 'search'));
     }
 
     // FITUR KELOLA USER

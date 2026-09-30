@@ -22,6 +22,12 @@
             class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.dashboard') ? 'bg-gray-800 text-white font-medium' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                 Dashboard
             </a>
+
+            <!-- Menu Log aktivitas -->
+            <a href="{{ route('admin.log-aktivitas.index') }}" 
+            class="block px-4 py-2 rounded-lg transition {{ request()->routeIs('admin.log-aktivitas.*') ? 'bg-gray-800 text-white font-medium' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                Log Aktivitas
+            </a>
             
             <!-- Menu Kelola User -->
             <a href="{{ route('admin.user.index') }}" 
@@ -71,6 +77,7 @@
                 </a>
             @endif
         @endif
+            <!-- Foto Profile -->
             </nav>
             <div class="p-4 border-t border-gray-800 text-sm text-gray-400 flex items-center gap-3">
                 @if(auth()->user()->foto_profile)
@@ -91,11 +98,11 @@
         <div class="flex-1 flex flex-col overflow-y-auto">
             
             <!-- NAVBAR ATAS -->
-            <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
-                <div class="text-lg font-semibold text-gray-800">
+            <header class="bg-white shadow-sm h-16 flex items-center justify-between gap-4 px-6 z-10">
+                <div class="flex-1 min-w-0 text-lg font-semibold text-gray-800 truncate">
                     @yield('header-title', 'Dashboard')
                 </div>
-                <div>
+                <div class="flex-shrink-0">
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
