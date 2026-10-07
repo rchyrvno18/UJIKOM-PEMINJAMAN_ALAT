@@ -125,6 +125,7 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:6',
             'role' => 'required|in:admin,petugas,peminjam',
             'foto_profile' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -161,6 +162,27 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
 
+        // 1. Admin tidak boleh menghapus akunnya sendiri
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'Tidak dapat menghapus admin ini karena merupakan satu-satunya admin yang tersisa.');
+        }
+
+         // 2. Cek apakah user memiliki peminjaman dengan status 'dipinjam' atau 'menunggu_persetujuan'
+        $hasActivePeminjaman = $user->peminjaman()
+            ->whereIn('status', ['dipinjam', 'menunggu_persetujuan'])
+            ->exists();
+
+        if ($hasActivePeminjaman) {
+            return redirect()->route('admin.user.index')
+                ->with('error', 'User tidak bisa dihapus karena masih memiliki peminjaman yang berstatus dipinjam atau menunggu persetujuan.');
+        }
+
         if ($user->foto_profile && file_exists(public_path($user->foto_profile))) {
             unlink(public_path($user->foto_profile));
         }
@@ -180,7 +202,7 @@ class AdminController extends Controller
             return $query->where('nama_kategori', 'like', "%{$search}%");
         })
             ->latest()
-            ->paginate(5)
+            ->paginate(10)
             ->withQueryString();
 
         return view('admin.kategori.index', compact('kategoris', 'search'));
@@ -374,7 +396,7 @@ class AdminController extends Controller
             'tgl_pinjam' => 'required|date',
             'tgl_kembali_plan' => 'required|date|after_or_equal:tgl_pinjam',
             'alat_id' => 'required|array',
-            'alat_id.*' => 'exists:alat,id', // Diperbaiki dari 'alats' ke 'alat'
+            'alat_id.*' => 'exists:alat,id',
             'jumlah' => 'required|array',
             'jumlah.*' => 'integer|min:1',
         ]);
@@ -416,7 +438,7 @@ class AdminController extends Controller
         $peminjaman = Peminjaman::with('detailPinjam.alat')->findOrFail($id);
 
         $request->validate([
-            'status' => 'required|in:diajukan,dipinjam,selesai,telat',
+            'status' => 'required|in:diajukan,dipinjam,menunggu_pengembalian,selesai,telat',
         ]);
 
         DB::beginTransaction();
@@ -424,7 +446,7 @@ class AdminController extends Controller
             $statusLama = $peminjaman->status;
             $statusBaru = $request->status;
 
-            if ($statusLama != 'dipinjam' && $statusBaru == 'dipinjam') {
+            if ($statusLama == 'diajukan' && $statusBaru == 'dipinjam') {
                 foreach ($peminjaman->detailPinjam as $detail) {
                     $alat = $detail->alat;
                     if ($alat->stok < $detail->jumlah) {
@@ -451,7 +473,7 @@ class AdminController extends Controller
     {
         $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($id);
 
-        if ($peminjaman->status == 'dipinjam') {
+        if (in_array($peminjaman->status, ['dipinjam', 'menunggu_pengembalian', 'telat'])) {
             foreach ($peminjaman->detailPinjam as $detail) {
                 $detail->alat->increment('stok', $detail->jumlah);
             }
@@ -490,7 +512,7 @@ class AdminController extends Controller
     public function createPengembalian()
     {
         $peminjamans = Peminjaman::with(['user', 'detailPinjam.alat'])
-            ->where('status', 'dipinjam')
+            ->where('status', 'menunggu_pengembalian')
             ->get();
 
         // Daftar user yang boleh jadi petugas penerima/penyetuju pengembalian
@@ -511,8 +533,8 @@ class AdminController extends Controller
         try {
             $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($request->peminjaman_id);
 
-            if ($peminjaman->status !== 'dipinjam') {
-                return redirect()->back()->with('error', 'Peminjaman ini tidak berstatus "dipinjam".');
+            if ($peminjaman->status !== 'menunggu_pengembalian') {
+                return redirect()->back()->with('error', 'Peminjaman ini belum diajukan pengembaliannya oleh peminjam.');
             }
 
             $telat = now()->startOfDay()->greaterThan(\Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->startOfDay());
@@ -571,14 +593,28 @@ class AdminController extends Controller
                 $alat->decrement('stok', $detail->jumlah);
             }
 
-            $peminjaman->update(['status' => 'dipinjam']);
+            $peminjaman->update(['status' => 'menunggu_pengembalian']);
             $pengembalian->delete();
 
             DB::commit();
-            return redirect()->route('admin.pengembalian.index')->with('success', 'Data pengembalian dibatalkan, status peminjaman kembali ke "dipinjam".');
+            return redirect()->route('admin.pengembalian.index')->with('success', 'Data pengembalian dibatalkan, status peminjaman kembali ke "menunggu pengembalian".');
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+    // Cetak Laporan Pengembalian (Admin)
+    public function indexLaporan(Request $request)
+    {
+        $tglMulai = $request->input('tgl_mulai');
+        $tglSelesai = $request->input('tgl_selesai');
+
+        $pengembalians = Pengembalian::with(['peminjaman.user', 'petugas'])
+            ->when($tglMulai, fn($q, $v) => $q->whereDate('tgl_kembali', '>=', $v))
+            ->when($tglSelesai, fn($q, $v) => $q->whereDate('tgl_kembali', '<=', $v))
+            ->latest()
+            ->get();
+
+        return view('admin.laporan.index', compact('pengembalians', 'tglMulai', 'tglSelesai'));
     }
 }

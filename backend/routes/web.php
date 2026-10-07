@@ -14,6 +14,7 @@ Route::get('/', function () {
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
     Route::get('/log-aktivitas', [AdminController::class, 'indexLogAktivitas'])->name('log-aktivitas.index');
+    Route::get('/laporan', [AdminController::class, 'indexLaporan'])->name('laporan.index');
     // CRUD User
     Route::get('/users', [AdminController::class, 'indexUser'])->name('user.index');
     Route::get('/users/create', [AdminController::class, 'createUser'])->name('user.create');
@@ -66,7 +67,10 @@ Route::middleware(['auth', 'role:petugas,admin'])->prefix('petugas')->name('petu
 
     // Cetak Laporan
     Route::get('/laporan', [PetugasController::class, 'indexLaporan'])->name('laporan.index');
-});
+
+    Route::get('/pengembalian/create', [PetugasController::class, 'createPengembalian'])->name('pengembalian.create');
+    Route::post('/pengembalian', [PetugasController::class, 'storePengembalian'])->name('pengembalian.store');
+    });
 
 // peminjam
 Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam.')->group(function () {

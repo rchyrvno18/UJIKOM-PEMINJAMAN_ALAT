@@ -96,6 +96,7 @@
                                             class="w-full text-xs font-medium rounded-lg px-2 py-1.5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="diajukan" {{ $peminjaman->status == 'diajukan' ? 'selected' : '' }}>Diajukan</option>
                                             <option value="dipinjam" {{ $peminjaman->status == 'dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+                                            <option value="menunggu_pengembalian" {{ $peminjaman->status == 'menunggu_pengembalian' ? 'selected' : '' }}>Menunggu Pengembalian</option>
                                             <option value="selesai" {{ $peminjaman->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
                                             <option value="telat" {{ $peminjaman->status == 'telat' ? 'selected' : '' }}>Telat</option>
                                         </select>

@@ -85,6 +85,55 @@ class PetugasController extends Controller
         return view('petugas.pengembalian.index', compact('pengembalians', 'search'));
     }
 
+    public function createPengembalian()
+{
+    $peminjamans = Peminjaman::with(['user', 'detailPinjam.alat'])
+        ->where('status', 'menunggu_pengembalian')
+        ->get();
+
+    return view('petugas.pengembalian.create', compact('peminjamans'));
+}
+
+    public function storePengembalian(Request $request)
+    {
+        $request->validate([
+            'peminjaman_id' => 'required|exists:peminjaman,id',
+            'kondisi_kembali' => 'required|string|max:255',
+            'denda' => 'nullable|integer|min:0',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($request->peminjaman_id);
+
+            if ($peminjaman->status !== 'menunggu_pengembalian') {
+                return redirect()->back()->with('error', 'Peminjaman ini belum diajukan pengembaliannya oleh peminjam.');
+            }
+
+            $telat = now()->startOfDay()->greaterThan(\Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->startOfDay());
+
+            Pengembalian::create([
+                'peminjaman_id' => $peminjaman->id,
+                'tgl_kembali' => now()->toDateString(),
+                'kondisi_kembali' => $request->kondisi_kembali,
+                'denda' => $request->denda ?? 0,
+                'petugas_id' => auth()->id(),
+            ]);
+
+            $peminjaman->update(['status' => $telat ? 'telat' : 'selesai']);
+
+            foreach ($peminjaman->detailPinjam as $detail) {
+                $alat = Alat::findOrFail($detail->alat_id);
+                $alat->increment('stok', $detail->jumlah);
+            }
+
+            DB::commit();
+            return redirect()->route('petugas.pengembalian.index')->with('success', 'Pengembalian berhasil dicatat dan stok alat dipulihkan.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
     // Menampilkan halaman cetak laporan
     public function indexLaporan(Request $request)
     {

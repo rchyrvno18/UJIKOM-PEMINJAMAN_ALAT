@@ -58,6 +58,12 @@
                 {{ request()->routeIs('admin.pengembalian*') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                 Kelola Pengembalian
             </a>
+
+            <a href="{{ route('admin.laporan.index') }}"
+                class="block px-4 py-2 rounded-lg transition
+                {{ request()->routeIs('admin.laporan*') ? 'bg-gray-800 text-white font-medium shadow' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                Cetak Laporan
+            </a>
         @else
             <!-- MENU KHUSUS PETUGAS -->
             @if(auth()->user()->role === 'petugas')
