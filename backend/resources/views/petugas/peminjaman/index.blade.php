@@ -19,13 +19,13 @@
         <div class="p-5 border-b border-gray-200 bg-gray-50">
             <h3 class="text-lg font-bold text-gray-800">Menunggu Verifikasi Persetujuan</h3>
             <form action="{{ route('petugas.peminjaman.index') }}" method="GET" class="flex w-full mt-4">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama peminjam..." 
-                    class="w-full px-3 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama peminjam..."
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 text-sm font-semibold rounded-r-lg transition">
                     Cari
                 </button>
                 @if(request('search'))
-                    <a href="{{ route('petugas.peminjaman.index') }}" 
+                    <a href="{{ route('petugas.peminjaman.index') }}"
                         class="ml-2 bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 text-sm rounded-lg flex items-center transition">
                         Reset
                     </a>
@@ -46,6 +46,12 @@
                 </thead>
                 <tbody class="text-gray-700 text-sm">
                     @forelse($peminjamans as $item)
+                        @php
+                            // True jika ada minimal satu alat yang stoknya kurang dari jumlah yang diminta
+                            $stokKurang = $item->detailPinjam->contains(function ($d) {
+                                return ($d->alat->stok ?? 0) < $d->jumlah;
+                            });
+                        @endphp
                         <tr class="hover:bg-gray-50 transition align-top">
                             <td class="py-3 px-4 border-b font-medium text-gray-900">
                                 {{ $item->user->name ?? 'User Dihapus' }}
@@ -53,23 +59,35 @@
                             <td class="py-3 px-4 border-b">{{ $item->tgl_pinjam->format('d M Y') }}</td>
                             <td class="py-3 px-4 border-b">{{ $item->tgl_kembali_plan->format('d M Y') }}</td>
                             <td class="py-3 px-4 border-b">
-                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                <ul class="space-y-1.5 text-xs">
                                     @foreach($item->detailPinjam ?? [] as $detail)
-                                        <li>
-                                            <span class="font-semibold">{{ $detail->alat->nama_alat ?? 'Alat Dihapus' }}</span> 
-                                            (Jumlah: {{ $detail->jumlah }})
+                                        @php
+                                            $stokSekarang = $detail->alat->stok ?? 0;
+                                            $cukup = $stokSekarang >= $detail->jumlah;
+                                        @endphp
+                                        <li class="flex flex-wrap items-center gap-x-2">
+                                            <span class="font-semibold">{{ $detail->alat->nama_alat ?? 'Alat Dihapus' }}</span>
+                                            <span class="text-gray-500">(Jumlah: {{ $detail->jumlah }})</span>
+                                            <span class="px-2 py-0.5 rounded-full {{ $cukup ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700 font-semibold' }}">
+                                                Stok tersisa: {{ $stokSekarang }}
+                                            </span>
                                         </li>
                                     @endforeach
                                 </ul>
+                                @if($stokKurang)
+                                    <p class="mt-2 text-xs text-red-600">Stok tidak mencukupi, pengajuan ini belum bisa disetujui.</p>
+                                @endif
                             </td>
                             <td class="py-3 px-4 border-b text-center">
                                 @if($item->status == 'diajukan')
                                     <div class="flex justify-center items-center space-x-2">
-                                        <!-- Tombol Setujui -->
+                                        <!-- Tombol Setujui (nonaktif jika stok tidak cukup) -->
                                         <form action="{{ route('petugas.peminjaman.setujui', $item->id) }}" method="POST">
                                             @csrf
-                                            <button type="submit" onclick="return confirm('Setujui peminjaman alat ini?')" 
-                                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition shadow-sm">
+                                            <button type="submit"
+                                                @if($stokKurang) disabled title="Stok alat tidak mencukupi" @else onclick="return confirm('Setujui peminjaman alat ini?')" @endif
+                                                class="px-3 py-1.5 rounded text-xs font-semibold transition shadow-sm
+                                                    {{ $stokKurang ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white' }}">
                                                 Setujui
                                             </button>
                                         </form>
@@ -77,7 +95,7 @@
                                         <!-- Tombol Tolak -->
                                         <form action="{{ route('petugas.peminjaman.tolak', $item->id) }}" method="POST">
                                             @csrf
-                                            <button type="submit" onclick="return confirm('Yakin ingin menolak pengajuan peminjaman ini?')" 
+                                            <button type="submit" onclick="return confirm('Yakin ingin menolak pengajuan peminjaman ini?')"
                                                 class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition shadow-sm">
                                                 Tolak
                                             </button>
@@ -85,7 +103,7 @@
                                     </div>
                                 @else
                                     <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">
-                                        {{ ucfirst($item->status) }}
+                                        {{ ucwords(str_replace('_', ' ', $item->status)) }}
                                     </span>
                                 @endif
                             </td>
@@ -98,5 +116,11 @@
                 </tbody>
             </table>
         </div>
+
+        @if($peminjamans->hasPages())
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
+                {{ $peminjamans->links() }}
+            </div>
+        @endif
     </div>
 @endsection

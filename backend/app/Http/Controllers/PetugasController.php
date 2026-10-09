@@ -33,24 +33,49 @@ class PetugasController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Diubah menjadi detailPinjam (tanpa 's')
-            $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($id);
-            $peminjaman->update(['status' => 'dipinjam']);
+            // Kunci baris peminjaman biar tidak bisa disetujui dua kali bersamaan
+            $peminjaman = Peminjaman::with('detailPinjam')->lockForUpdate()->findOrFail($id);
 
-            // Kurangi stok alat secara otomatis
-            foreach ($peminjaman->detailPinjam as $detail) {
-                $alat = Alat::findOrFail($detail->alat_id);
-                $alat->stok -= $detail->jumlah;
-                $alat->save();
+            // 1. Pastikan masih berstatus "diajukan" (cegah klik ganda / sudah diproses petugas lain)
+            if ($peminjaman->status !== 'diajukan') {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Pengajuan ini sudah diproses sebelumnya.');
             }
+
+            // 2. Urutkan berdasarkan alat_id supaya urutan kunci selalu sama (hindari deadlock)
+            $details = $peminjaman->detailPinjam->sortBy('alat_id');
+
+            // 3. Kunci tiap alat, lalu cek SEMUA stok dulu sebelum ada yang dikurangi
+            $alatTerkunci = [];
+            foreach ($details as $detail) {
+                $alat = Alat::lockForUpdate()->findOrFail($detail->alat_id);
+
+                if ($alat->stok < $detail->jumlah) {
+                    DB::rollBack();
+                    return redirect()->back()->with(
+                        'error',
+                        "Stok alat '{$alat->nama_alat}' tidak mencukupi (tersisa {$alat->stok}, diminta {$detail->jumlah}). Pengajuan tidak dapat disetujui."
+                    );
+                }
+
+                $alatTerkunci[$detail->id] = $alat;
+            }
+
+            // 4. Semua stok aman, baru kurangi
+            foreach ($details as $detail) {
+                $alatTerkunci[$detail->id]->decrement('stok', $detail->jumlah);
+            }
+
+            $peminjaman->update(['status' => 'dipinjam']);
 
             DB::commit();
             return redirect()->back()->with('success', 'Peminjaman disetujui dan stok alat dikurangi.');
         } catch (\Exception $e) {
-            DB::rollback();
+            DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+    
             public function tolakPeminjaman($id)
         {
             try {

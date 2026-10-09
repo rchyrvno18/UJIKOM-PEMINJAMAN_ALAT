@@ -9,24 +9,37 @@
 <body class="bg-gray-50 font-sans antialiased text-gray-900">
 
     <!-- NAVBAR -->
-    <nav class="bg-blue-600 sticky top-0 z-30">
+        <nav class="bg-blue-600 sticky top-0 z-30">
         <div class="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
-            <h1 class="text-white text-[15px] font-semibold tracking-tight">Panel Peminjam</h1>
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+                    <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+                <h1 class="text-white text-[15px] font-semibold tracking-tight">Panel Peminjam</h1>
+            </div>
             <div class="flex items-center gap-2">
                 <a href="{{ route('peminjam.katalog') }}"
-                   class="text-white/90 text-sm font-medium px-4 py-2 rounded-full hover:bg-white/10 transition">
+                class="flex items-center gap-1.5 text-white text-sm font-medium px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h7"/>
+                    </svg>
                     Katalog Alat
                 </a>
-                <form action="{{ route('logout') }}" method="POST">
+                <form action="{{ route('logout') }}" method="POST" onsubmit="return confirm('Yakin ingin logout?')">
                     @csrf
-                    <button type="submit" class="bg-white text-blue-600 px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-50 transition">
+                    <button type="submit" class="flex items-center gap-1.5 bg-white text-blue-600 px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-50 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V6a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
                         Logout
                     </button>
                 </form>
             </div>
         </div>
     </nav>
-
+    
     <main class="max-w-6xl mx-auto px-6 py-10">
 
         <div class="mb-8">
