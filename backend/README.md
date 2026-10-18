@@ -57,3 +57,13 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Cara Menjalankan
+1. git clone <url-repo> && cd API-UJIKOM-01
+2. cp backend/.env.example backend/.env
+3. docker compose run --rm app-laravel composer install
+4. docker compose up -d
+5. docker compose exec app-laravel php artisan key:generate
+6. docker compose exec app-laravel php artisan migrate --seed
+   (kalau gagal konek DB, tunggu ±30 detik lalu ulangi)
+7. Aplikasi: http://localhost:8000 | phpMyAdmin: http://localhost:8081

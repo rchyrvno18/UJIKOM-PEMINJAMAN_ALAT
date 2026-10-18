@@ -35,7 +35,7 @@ class AdminController extends Controller
         ));
     }
 
-    // Halaman Log Aktivitas (terpisah dari dashboard)
+    // Halaman Log Aktivitas
     public function indexLogAktivitas(Request $request)
     {
         $search = $request->input('search');
