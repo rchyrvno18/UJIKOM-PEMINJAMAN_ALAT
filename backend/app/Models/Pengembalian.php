@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class Pengembalian extends Model
 {
@@ -25,5 +26,19 @@ class Pengembalian extends Model
 
     public function petugas(): BelongsTo {
         return $this->belongsTo(User::class, 'petugas_id');
+    }
+
+    public function getHariTerlambatAttribute(): int
+    {
+        $rencana = $this->peminjaman?->tgl_kembali_plan;
+
+        if (!$rencana || !$this->tgl_kembali) {
+            return 0;
+        }
+
+        $selisihDetik = Carbon::parse($this->tgl_kembali)->startOfDay()->timestamp
+                    - Carbon::parse($rencana)->startOfDay()->timestamp;
+
+        return max(0, intdiv($selisihDetik, 86400));
     }
 } 

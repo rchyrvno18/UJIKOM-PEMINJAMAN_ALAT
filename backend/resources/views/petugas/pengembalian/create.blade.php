@@ -22,11 +22,13 @@
                 <option value="" data-alat="">-- Pilih Data Peminjaman --</option>
                 @foreach($peminjamans as $pjm)
                     @php
-                        $listAlat = '';
-                        foreach($pjm->detailPinjam as $detail) {
-                            $nama_alat = $detail->alat->nama_alat ?? 'Alat Dihapus';
-                            $listAlat .= "- {$nama_alat} (Jumlah: {$detail->jumlah} pcs)<br>";
-                        }
+                    $listAlat = '';
+                    $rencana = $pjm->tgl_kembali_plan->copy()->startOfDay();
+                    $hariTelat = max(0, intdiv(now()->startOfDay()->timestamp - $rencana->timestamp, 86400));
+                    $tglRencana = $rencana->format('d M Y');
+                    $listAlat .= $hariTelat > 0
+                        ? "<br><b style='color:#b91c1c'>Rencana kembali {$tglRencana} - TERLAMBAT {$hariTelat} hari (pertimbangkan denda)</b>"
+                        : "<br><b style='color:#047857'>Rencana kembali {$tglRencana} - belum lewat (tepat waktu)</b>";
                     @endphp
                     <option value="{{ $pjm->id }}" data-alat="{{ $listAlat }}" {{ old('peminjaman_id') == $pjm->id ? 'selected' : '' }}>
                         {{ $pjm->user->name }} - Tgl Pinjam: {{ \Carbon\Carbon::parse($pjm->tgl_pinjam)->format('d M Y') }}

@@ -537,7 +537,7 @@ class AdminController extends Controller
                 return redirect()->back()->with('error', 'Peminjaman ini belum diajukan pengembaliannya oleh peminjam.');
             }
 
-            $telat = now()->startOfDay()->greaterThan(\Carbon\Carbon::parse($peminjaman->tgl_kembali_plan)->startOfDay());
+            
 
             Pengembalian::create([
                 'peminjaman_id' => $peminjaman->id,
@@ -547,7 +547,7 @@ class AdminController extends Controller
                 'petugas_id' => auth()->id(),
             ]);
 
-            $peminjaman->update(['status' => $telat ? 'telat' : 'selesai']);
+            $peminjaman->update(['status' => 'selesai']);
 
             foreach ($peminjaman->detailPinjam as $detail) {
                 $alat = Alat::findOrFail($detail->alat_id);

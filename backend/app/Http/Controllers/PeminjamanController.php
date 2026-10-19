@@ -34,8 +34,12 @@ class PeminjamanController extends Controller
     {
         $request->validate([
             'tgl_kembali_plan' => 'required|date|after_or_equal:today', // after:today membuat tidak bisa pinjam 1 hari
-            'alat_id' => 'required|array',
+            'alat_id' => 'required|array|min:1',
+            'alat_id.*' => 'integer|exists:alat,id',
             'jumlah' => 'required|array',
+        ], [
+            'alat_id.required' => 'Pilih minimal satu alat yang ingin dipinjam.',
+            'alat_id.min' => 'Pilih minimal satu alat yang ingin dipinjam.',
         ]);
 
         DB::beginTransaction();
@@ -45,15 +49,20 @@ class PeminjamanController extends Controller
                 'user_id' => auth()->id(),
                 'tgl_pinjam' => now()->toDateString(),
                 'tgl_kembali_plan' => $request->tgl_kembali_plan,
-                'status' => 'diajukan', 
+                'status' => 'diajukan',
             ]);
 
             // Masukkan daftar alat yang dipinjam ke detail_pinjam
-            foreach ($request->alat_id as $index => $alatId) {
-                $jumlahPinjam = $request->jumlah[$index];
-                
+            foreach (array_unique($request->alat_id) as $alatId) {
                 // KUNCI STOK: Mencegah bentrok jika ada 2 user meminjam barang yang sama di detik yang sama
                 $alat = Alat::lockForUpdate()->findOrFail($alatId);
+
+                // Jumlah dicari berdasarkan ID alat (jumlah[ID_ALAT]), bukan urutan, supaya tidak tertukar
+                $jumlahPinjam = (int) $request->input("jumlah.$alatId", 0);
+
+                if ($jumlahPinjam < 1) {
+                    throw new \Exception("Jumlah pinjam untuk alat '{$alat->nama_alat}' minimal 1.");
+                }
 
                 if ($alat->stok < $jumlahPinjam) {
                     throw new \Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi.");
@@ -66,13 +75,13 @@ class PeminjamanController extends Controller
                 ]);
             }
 
-            DB::commit();
-            return redirect()->route('peminjam.riwayat')->with('success', 'Pengajuan peminjaman berhasil dikirim! Menunggu persetujuan Petugas.');
-        } catch (\Exception $e) {
-            DB::rollback();
-            return redirect()->back()->with('error', 'Gagal mengajukan peminjaman: ' . $e->getMessage());
-        }
+        DB::commit();
+        return redirect()->route('peminjam.riwayat')->with('success', 'Pengajuan peminjaman berhasil dikirim! Menunggu persetujuan Petugas.');
+    } catch (\Exception $e) {
+        DB::rollback();
+        return redirect()->back()->with('error', 'Gagal mengajukan peminjaman: ' . $e->getMessage());
     }
+}
 
     // 3. Melihat riwayat peminjaman user yang sedang login
     public function riwayatPeminjaman()

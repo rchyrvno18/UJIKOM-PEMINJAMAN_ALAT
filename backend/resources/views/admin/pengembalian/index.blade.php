@@ -47,6 +47,7 @@
                 <thead>
                     <tr class="bg-gray-100 text-gray-600 text-sm uppercase tracking-wider">
                         <th class="py-3 px-4 border-b">Tgl Kembali</th>
+                        <th class="py-3 px-4 border-b">Ketepatan Waktu</th>
                         <th class="py-3 px-4 border-b">Peminjam</th>
                         <th class="py-3 px-4 border-b">Petugas Verifikasi</th>
                         <th class="py-3 px-4 border-b">Kondisi</th>
@@ -58,6 +59,14 @@
                     @forelse($pengembalians as $pengembalian)
                         <tr class="hover:bg-gray-50 transition align-top">
                             <td class="py-3 px-4 border-b">{{ $pengembalian->tgl_kembali }}</td>
+                            <td class="py-3 px-4 border-b">
+                                @if($pengembalian->hari_terlambat > 0)
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Terlambat {{ $pengembalian->hari_terlambat }} hari</span>
+                                @else
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Tepat waktu</span>
+                                @endif
+                                <div class="text-xs text-gray-400 mt-1">Rencana: {{ $pengembalian->peminjaman?->tgl_kembali_plan?->format('d M Y') ?? '-' }}</div>
+                            </td>
                             <td class="py-3 px-4 border-b font-medium text-gray-900">
                                 {{ $pengembalian->peminjaman->user->name ?? 'User Dihapus' }}
                             </td>
@@ -87,7 +96,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-6 text-center text-gray-500">Belum ada data pengembalian.</td>
+                            <td colspan="7" class="py-6 text-center text-gray-500">Belum ada data pengembalian.</td>
                         </tr>
                     @endforelse
                 </tbody>

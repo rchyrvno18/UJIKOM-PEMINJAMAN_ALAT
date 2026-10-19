@@ -74,6 +74,13 @@
                 {{ session('error') }}
             </div>
         @endif
+        @if($errors->any())
+            <div class="mb-6 bg-red-50 border border-red-100 text-red-800 px-4 py-3 rounded-xl text-sm">
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
 
         <form id="form-ajukan" action="{{ route('peminjam.ajukan') }}" method="POST">
             @csrf
@@ -143,7 +150,7 @@
 
                                 <div class="flex items-center border border-gray-200 rounded-full overflow-hidden">
                                     <button type="button" class="qty-minus w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition">−</button>
-                                    <input type="number" name="jumlah[]" value="1" min="1" max="{{ $alat->stok }}"
+                                    <input type="number" name="jumlah[{{ $alat->id }}]" value="1" min="1" max="{{ $alat->stok }}"
                                            class="qty-input w-8 text-center text-xs font-medium border-0 focus:ring-0 p-0">
                                     <button type="button" class="qty-plus w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition">+</button>
                                 </div>
